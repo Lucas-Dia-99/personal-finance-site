@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ledgerline — Personal Finance</title>
+  <meta name="description" content="A private, offline-first personal finance dashboard: net worth, paycheck, retirement, cash flow, 401(k) and savings goals.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <span class="brand-mark">📈</span>
+        <span class="brand-name">Ledgerline</span>
+      </div>
+      <nav class="nav" id="nav" aria-label="Primary"></nav>
+      <div class="sidebar-foot">
+        <button class="btn btn-ghost btn-sm" id="themeToggle" type="button">Toggle theme</button>
+        <p class="muted small">Data stays on this device.</p>
+      </div>
+    </aside>
+    <header class="topbar">
+      <button class="icon-btn" id="menuToggle" type="button" aria-label="Menu">☰</button>
+      <span class="brand-name">Ledgerline</span>
+    </header>
+    <main class="view" id="view" tabindex="-1"></main>
+  </div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
