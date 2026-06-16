@@ -1,6 +1,7 @@
-import { el, clear, pageHead, card, button } from "../ui.js";
+import { el, clear, pageHead, card, button, mount } from "../ui.js";
 import { exportAll, importAll, clearAll } from "../store.js";
 import { todayISO } from "../format.js";
+import { buildDemo } from "../data/demo.js";
 
 export default function render(root, { go }) {
   function draw(message) {
@@ -8,7 +9,7 @@ export default function render(root, { go }) {
     const data = exportAll();
     const sections = Object.keys(data).length;
 
-    root.append(
+    mount(root,
       pageHead("Data & Backup", "Your data lives only in this browser. Back it up so you never lose it."),
       message && el("div.card", { style: "border-color:var(--positive);background:var(--positive-weak)" }, el("strong", {}, message)),
 
@@ -22,6 +23,18 @@ export default function render(root, { go }) {
         el("h2", {}, "Restore from backup"),
         el("p.card-sub", {}, "Load a previously exported JSON file. This replaces all current data."),
         fileInput(),
+      ),
+
+      card(
+        el("h2", {}, "Printable report"),
+        el("p.card-sub", {}, "Open your browser's print dialog to save a clean PDF snapshot of the current screen."),
+        button("🖨 Print / Save as PDF", () => window.print(), "secondary"),
+      ),
+
+      card(
+        el("h2", {}, "Sample data"),
+        el("p.card-sub", {}, "Load a realistic demo dataset to explore every feature. This replaces all current data."),
+        button("✨ Load sample data", loadDemo, "secondary"),
       ),
 
       card(
@@ -64,6 +77,12 @@ export default function render(root, { go }) {
       reader.readAsText(file);
     });
     return el("label.field", {}, el("span", {}, "Choose a backup file"), input);
+  }
+
+  function loadDemo() {
+    if (Object.keys(exportAll()).length && !confirm("Load sample data? This replaces all current data.")) return;
+    importAll(buildDemo());
+    go("/dashboard");
   }
 
   function doClear() {

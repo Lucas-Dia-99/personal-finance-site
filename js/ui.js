@@ -36,6 +36,13 @@ export function clear(node) {
   return node;
 }
 
+// Like el's child handling but for an existing parent: appends nodes/strings
+// and skips null/false/undefined so `cond && node` patterns are safe.
+export function mount(parent, ...children) {
+  appendAll(parent, children);
+  return parent;
+}
+
 export function pageHead(title, subtitle) {
   return el("header.page-head", {}, el("h1", {}, title), subtitle && el("p", {}, subtitle));
 }

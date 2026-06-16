@@ -1,4 +1,4 @@
-import { el, clear, pageHead, card, stat, progressBar, button } from "../ui.js";
+import { el, clear, pageHead, card, stat, progressBar, button, mount } from "../ui.js";
 import { load } from "../store.js";
 import { usd, pct } from "../format.js";
 import { toMonthly } from "../lib/finance.js";
@@ -20,9 +20,12 @@ export default function render(root, { go }) {
   const goalSaved = sum(sv.goals, (g) => +g.saved || 0);
   const goalFrac = goalTarget > 0 ? goalSaved / goalTarget : 0;
 
+  const cash = sum(nw.assets.filter((a) => ["Cash", "Checking", "Savings"].includes(a.category)), (a) => +a.value || 0);
+  const monthsCovered = expenses > 0 ? cash / expenses : 0;
+
   const hasData = nw.assets.length || nw.liabilities.length || cf.income.length || cf.expenses.length || sv.goals.length;
 
-  root.append(
+  mount(root,
     pageHead("Dashboard", "Your financial picture at a glance."),
     !hasData && welcomeCard(go),
     el("div.grid.grid-3", {},
@@ -33,9 +36,29 @@ export default function render(root, { go }) {
       tile("Savings Rate", income ? pct(savingsRate, 0) : "—", null,
         income ? "of income saved each month" : "Set up cash flow first", "/cash-flow", go),
     ),
+    hasData && suggestionsCard({ net, expenses, monthsCovered, cash, goals: sv.goals }, go),
     el("div.grid.grid-2", { style: "margin-top:18px" },
       goalsCard(sv, goalSaved, goalTarget, goalFrac, go),
       quickCard(go),
+    ),
+  );
+}
+
+function suggestionsCard({ net, expenses, monthsCovered, cash, goals }, go) {
+  const tips = [];
+  if (expenses > 0) {
+    if (monthsCovered < 3) tips.push(["🛟", `Your cash covers ${monthsCovered.toFixed(1)} months of expenses — aim for at least 3.`, "/emergency-fund"]);
+    else tips.push(["🛟", `Emergency fund looks healthy: ${monthsCovered.toFixed(1)} months covered.`, "/emergency-fund"]);
+  }
+  if (net > 0) tips.push(["💸", `You have ${usd(net)}/mo of surplus — consider routing it to a savings goal or investing.`, goals.length ? "/savings-goals" : "/investment"]);
+  else if (net < 0 && expenses > 0) tips.push(["⚠️", `You're spending ${usd(-net)}/mo more than you earn. Review your Cash Flow.`, "/cash-flow"]);
+  if (!tips.length) return null;
+  return card(
+    el("h2", {}, "Suggestions"),
+    el("div.list", { style: "margin-top:6px" },
+      ...tips.map(([ico, text, path]) =>
+        el("div.line-item", { style: "cursor:pointer;grid-template-columns:auto 1fr auto", onClick: () => go(path) },
+          el("span", { style: "font-size:18px" }, ico), el("div.li-name", { style: "font-weight:500" }, text), el("span.muted", {}, "→"))),
     ),
   );
 }

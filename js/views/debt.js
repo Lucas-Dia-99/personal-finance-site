@@ -1,4 +1,4 @@
-import { el, clear, pageHead, card, stat, field, textInput, moneyInput, select, button, deleteBtn, empty } from "../ui.js";
+import { el, clear, pageHead, card, stat, field, textInput, moneyInput, select, button, deleteBtn, empty, mount } from "../ui.js";
 import { load, save, uid } from "../store.js";
 import { usd } from "../format.js";
 import { simulateDebt, minimumOnly, monthsToWords } from "../lib/debt.js";
@@ -21,7 +21,7 @@ export default function render(root) {
     const interestSaved = Math.max(0, base.totalInterest - sim.totalInterest);
     const monthsSaved = Math.max(0, base.months - sim.months);
 
-    root.append(
+    mount(root,
       pageHead("Debt Payoff Planner", "Compare avalanche vs. snowball and see what extra payments save you."),
       el("div.grid.grid-4", {},
         card(stat("Total debt", usd(totalBal), { tone: "neg" })),

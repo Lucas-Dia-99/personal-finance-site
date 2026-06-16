@@ -1,7 +1,10 @@
-import { el, clear, pageHead, card, stat, field, moneyInput } from "../ui.js";
+import { el, clear, pageHead, card, stat, field, moneyInput, button } from "../ui.js";
 import { load, save } from "../store.js";
 import { usd, pct } from "../format.js";
 import { lineChart } from "../chart.js";
+import { marginalRate } from "../lib/tax.js";
+import { TAX } from "../data/tax.js";
+import { getProfile } from "../profile.js";
 
 const KEY = "rothvstrad";
 const DEFAULT = { contribution: 7000, currentRate: 24, retireRate: 22, years: 30, annualReturn: 7 };
@@ -9,6 +12,13 @@ const DEFAULT = { contribution: 7000, currentRate: 24, retireRate: 22, years: 30
 export default function render(root) {
   const data = load(KEY, DEFAULT);
   function set(k, v) { data[k] = v; save(KEY, data); draw(); }
+  function useProfile() {
+    const p = getProfile();
+    const taxable = Math.max(0, p.salary - (TAX.standardDeduction[p.filing] || 0));
+    data.currentRate = Math.round(marginalRate(taxable, p.filing) * 100);
+    data.years = Math.max(1, p.retireAge - p.age);
+    save(KEY, data); draw();
+  }
 
   function draw() {
     clear(root);
@@ -43,7 +53,7 @@ export default function render(root) {
 
   function inputCard() {
     return card(
-      el("h2", {}, "Assumptions"),
+      el("div.spread", {}, el("h2", {}, "Assumptions"), button("↻ Use my profile", useProfile, "ghost btn-sm")),
       el("div.stack", {},
         field("Annual contribution", moneyInput(data.contribution, (v) => set("contribution", v)), "Pre-tax income devoted to retirement"),
         el("div.form-grid", {},

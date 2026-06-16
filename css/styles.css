@@ -199,6 +199,16 @@ table.data tr.total td { font-weight: 700; border-top: 2px solid var(--border); 
 .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
 .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: middle; }
 
+/* Print */
+@media print {
+  .sidebar, .topbar, .btn, .del-btn, input, select, .nav { display: none !important; }
+  .app { display: block; }
+  .view { padding: 0; max-width: none; }
+  body { background: #fff; }
+  .card { box-shadow: none; border-color: #ccc; break-inside: avoid; }
+  .chart { max-width: 520px; }
+}
+
 /* Responsive */
 @media (max-width: 860px) {
   .app { grid-template-columns: 1fr; }

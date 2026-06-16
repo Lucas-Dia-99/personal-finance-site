@@ -11,19 +11,31 @@ import debt from "./views/debt.js";
 import rothvstrad from "./views/rothvstrad.js";
 import fire from "./views/fire.js";
 import settings from "./views/settings.js";
+import profile from "./views/profile.js";
+import mortgage from "./views/mortgage.js";
+import affordability from "./views/affordability.js";
+import rentvsbuy from "./views/rentvsbuy.js";
+import emergency from "./views/emergency.js";
+import investment from "./views/investment.js";
 
 const ROUTES = [
   { path: "/dashboard", icon: "🏠", title: "Dashboard", render: dashboard, group: "Overview" },
+  { path: "/profile", icon: "👤", title: "Profile", render: profile, group: "Overview" },
   { path: "/net-worth", icon: "📊", title: "Net Worth", render: netWorth, group: "Track" },
   { path: "/cash-flow", icon: "🔄", title: "Cash Flow", render: cashflow, group: "Track" },
   { path: "/budget", icon: "📋", title: "Budget", render: budget, group: "Track" },
   { path: "/savings-goals", icon: "🎯", title: "Savings Goals", render: savings, group: "Plan" },
+  { path: "/emergency-fund", icon: "🛟", title: "Emergency Fund", render: emergency, group: "Plan" },
   { path: "/debt", icon: "💳", title: "Debt Payoff", render: debt, group: "Plan" },
   { path: "/retirement", icon: "🌴", title: "Retirement", render: retirement, group: "Plan" },
   { path: "/fire", icon: "🔥", title: "FIRE", render: fire, group: "Plan" },
   { path: "/paycheck", icon: "💵", title: "Paycheck", render: paycheck, group: "Paychecks" },
   { path: "/contribution-401k", icon: "🏦", title: "401(k) Impact", render: contrib401k, group: "Paychecks" },
   { path: "/roth-vs-traditional", icon: "⚖️", title: "Roth vs Traditional", render: rothvstrad, group: "Paychecks" },
+  { path: "/mortgage", icon: "🏡", title: "Mortgage", render: mortgage, group: "Calculators" },
+  { path: "/affordability", icon: "🔑", title: "Affordability", render: affordability, group: "Calculators" },
+  { path: "/rent-vs-buy", icon: "⚖️", title: "Rent vs Buy", render: rentvsbuy, group: "Calculators" },
+  { path: "/investment", icon: "📈", title: "Investment", render: investment, group: "Calculators" },
   { path: "/settings", icon: "💾", title: "Data & Backup", render: settings, group: "Data" },
 ];
 

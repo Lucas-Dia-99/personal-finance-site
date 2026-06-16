@@ -8,7 +8,8 @@ is stored in your browser's `localStorage`, so nothing ever leaves your device.
 
 | Section | What it does |
 | --- | --- |
-| **Dashboard** | At-a-glance summary of net worth, monthly cash flow, savings rate and goal progress. |
+| **Dashboard** | At-a-glance summary of net worth, cash flow, savings rate, goal progress, plus smart suggestions. |
+| **Profile** | Enter salary, filing status, age, etc. once — the paycheck/retirement tools pull them in. |
 | **Net Worth** | Track assets & liabilities by category and save dated snapshots to chart your trend over time. |
 | **Cash Flow** | Log income and expenses at any frequency (normalized to monthly), with a spending-by-category breakdown and savings rate. |
 | **Budget vs. Actual** | Set monthly limits per category, log spending, and track real spending against budget with month-by-month navigation. |
@@ -19,7 +20,12 @@ is stored in your browser's `localStorage`, so nothing ever leaves your device.
 | **Paycheck** | Estimate take-home pay after federal/state income tax, FICA, 401(k) and pre-tax benefits, with a full per-paycheck breakdown. |
 | **401(k) Impact** | See how much a pre-tax contribution *actually* costs your paycheck after tax deferral, plus employer match and IRS limit checks. |
 | **Roth vs Traditional** | Compare after-tax retirement outcomes of pre-tax vs. post-tax contributions at your current and expected tax rates. |
-| **Data & Backup** | Export all data to a JSON file and restore it later — protects against browser data loss. |
+| **Emergency Fund** | Months of expenses covered, seeded from real Cash Flow + cash accounts, with a funding timeline. |
+| **Mortgage** | Monthly payment, amortization schedule, and the impact of extra principal payments. |
+| **Affordability** | How much house your income supports using the 28/36 debt-to-income rule. |
+| **Rent vs Buy** | Net-worth comparison over your time horizon, investing the difference either way. |
+| **Investment** | Compound-interest sandbox for contributions and returns over time. |
+| **Data & Backup** | Export/import JSON backups, load sample data, print a PDF report, or erase everything. |
 
 ## Running it
 
@@ -41,7 +47,10 @@ Deploys as-is to GitHub Pages or any static host.
 - `js/app.js` — hash-based router and app shell.
 - `js/views/*.js` — one module per feature screen.
 - `js/lib/` — `tax.js` (federal income tax, FICA, paycheck), `finance.js`
-  (time-value-of-money helpers), and `debt.js` (payoff simulation).
+  (time-value-of-money helpers), `debt.js` (payoff simulation) and `housing.js`
+  (mortgage, affordability, rent-vs-buy).
+- `js/profile.js` — shared salary/age/filing profile reused across tools.
+- `js/data/demo.js` — sample dataset for the "Load sample data" button.
 - `js/data/tax.js` — editable tax constants (2025 IRS figures).
 - `js/ui.js`, `js/chart.js`, `js/store.js`, `js/format.js` — shared helpers,
   self-contained SVG charts, `localStorage` wrapper, and formatters.

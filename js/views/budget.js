@@ -44,7 +44,9 @@ export default function render(root) {
 
   function draw() {
     clear(root);
-    const txns = data.transactions.filter((t) => monthKey(t.date) === activeMonth);
+    // Recurring items count in their start month and every month after.
+    const txns = data.transactions.filter((t) =>
+      t.recurring ? monthKey(t.date) <= activeMonth : monthKey(t.date) === activeMonth);
     const spentByCat = {};
     txns.forEach((t) => { spentByCat[t.category] = (spentByCat[t.category] || 0) + (+t.amount || 0); });
 
@@ -129,12 +131,15 @@ export default function render(root) {
   }
 
   function logCard(txns) {
-    const c = card(el("h2", {}, "Spending Log"), el("p.card-sub", {}, `Transactions in ${monthLabel(activeMonth)}.`));
+    const c = card(
+      el("div.spread", {}, el("h2", {}, "Spending Log"),
+        el("div.row", { style: "gap:6px" }, csvImport(), button("⬇ CSV", () => exportCSV(txns), "ghost btn-sm"))),
+      el("p.card-sub", {}, `Transactions in ${monthLabel(activeMonth)}.`));
     const list = el("div.list");
     [...txns].sort((a, b) => b.date.localeCompare(a.date)).forEach((t) => {
       list.append(el("div.line-item", {},
         el("div", {}, el("div.li-name", {}, t.note || t.category),
-          el("div.li-meta", {}, `${t.category} · ${formatDate(t.date)}`)),
+          el("div.li-meta", {}, `${t.category} · ${formatDate(t.date)}${t.recurring ? " · 🔁 recurring" : ""}`)),
         el("div.li-amount", {}, usd(t.amount)),
         deleteBtn(() => { data.transactions = data.transactions.filter((x) => x.id !== t.id); persist(); }),
       ));
@@ -144,8 +149,49 @@ export default function render(root) {
     return c;
   }
 
+  function csvImport() {
+    const input = el("input", { type: "file", accept: ".csv,text/csv", style: "display:none" });
+    input.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const rows = parseCSV(reader.result);
+        let added = 0;
+        rows.forEach((r) => {
+          const amount = parseFloat(String(r.amount || r.Amount || "").replace(/[^0-9.\-]/g, ""));
+          if (!isFinite(amount) || amount === 0) return;
+          const date = (r.date || r.Date || todayISO()).slice(0, 10);
+          data.transactions.push({
+            id: uid(), date, category: r.category || r.Category || "Other",
+            amount: Math.abs(amount), note: r.note || r.Note || r.description || r.Description || "",
+            recurring: /^(true|yes|1)$/i.test(String(r.recurring || "")),
+          });
+          added++;
+        });
+        if (added) { activeMonth = monthKey(todayISO()); persist(); }
+        else alert("No rows imported. Expected columns: date, category, amount, note.");
+      };
+      reader.readAsText(file);
+    });
+    const label = el("label.btn.btn-ghost.btn-sm", { style: "cursor:pointer" }, "⬆ CSV");
+    label.appendChild(input);
+    return label;
+  }
+
+  function exportCSV(txns) {
+    const header = "date,category,amount,note,recurring";
+    const lines = txns.map((t) => [t.date, t.category, t.amount, csvCell(t.note || ""), t.recurring ? "true" : "false"].join(","));
+    const blob = new Blob([[header, ...lines].join("\n")], { type: "text/csv" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `spending-${activeMonth}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
   function addTxn() {
-    const draft = { date: todayISO(), category: CATS[0], amount: 0, note: "" };
+    const draft = { date: todayISO(), category: CATS[0], amount: 0, note: "", recurring: false };
     if (monthKey(draft.date) !== activeMonth) draft.date = activeMonth + "-15";
     return el("div.stack", {},
       el("div.form-grid", {},
@@ -155,6 +201,10 @@ export default function render(root) {
       el("div.form-grid", {},
         field("Amount", moneyInput("", (v) => (draft.amount = v))),
         field("Note (optional)", textInput("", (v) => (draft.note = v), "e.g. Groceries at Aldi")),
+      ),
+      el("label.field", { style: "flex-direction:row;align-items:center;gap:8px" },
+        el("input", { type: "checkbox", style: "width:auto", onChange: (e) => (draft.recurring = e.target.checked) }),
+        el("span", { style: "font-weight:500;color:var(--text)" }, "🔁 Repeats every month"),
       ),
       button("+ Log spending", () => {
         if (!draft.amount) return;
@@ -166,4 +216,37 @@ export default function render(root) {
   }
 
   draw();
+}
+
+// Minimal CSV parser supporting quoted fields. Returns array of row objects
+// keyed by header. Falls back gracefully on ragged rows.
+function parseCSV(text) {
+  const lines = text.replace(/\r/g, "").split("\n").filter((l) => l.trim().length);
+  if (!lines.length) return [];
+  const splitRow = (line) => {
+    const out = []; let cur = "", inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (inQ) {
+        if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+        else if (ch === '"') inQ = false;
+        else cur += ch;
+      } else if (ch === '"') inQ = true;
+      else if (ch === ",") { out.push(cur); cur = ""; }
+      else cur += ch;
+    }
+    out.push(cur);
+    return out;
+  };
+  const headers = splitRow(lines[0]).map((h) => h.trim().toLowerCase());
+  return lines.slice(1).map((line) => {
+    const cells = splitRow(line);
+    const obj = {};
+    headers.forEach((h, i) => (obj[h] = (cells[i] || "").trim()));
+    return obj;
+  });
+}
+
+function csvCell(s) {
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 }

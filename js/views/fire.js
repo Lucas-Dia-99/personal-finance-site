@@ -3,6 +3,7 @@ import { load, save } from "../store.js";
 import { usd, pct } from "../format.js";
 import { projectBalance, toMonthly } from "../lib/finance.js";
 import { lineChart } from "../chart.js";
+import { getProfile } from "../profile.js";
 
 const KEY = "fire";
 
@@ -10,20 +11,21 @@ const KEY = "fire";
 function seedDefaults() {
   const cf = load("cashflow", { income: [], expenses: [] });
   const nw = load("networth", { assets: [] });
+  const p = getProfile();
   const monthlyExpenses = cf.expenses.reduce((t, e) => t + toMonthly(+e.amount || 0, e.frequency), 0);
   const monthlyIncome = cf.income.reduce((t, e) => t + toMonthly(+e.amount || 0, e.frequency), 0);
   const invested = nw.assets
     .filter((a) => ["Investments", "Retirement", "Savings"].includes(a.category))
     .reduce((t, a) => t + (+a.value || 0), 0);
   return {
-    currentAge: 35,
+    currentAge: p.age,
     annualExpenses: Math.round(monthlyExpenses * 12) || 50000,
     invested: Math.round(invested) || 60000,
     monthlyContribution: Math.round(Math.max(0, monthlyIncome - monthlyExpenses)) || 1500,
     annualReturn: 7,
     inflation: 2.5,
     withdrawalRate: 4,
-    targetAge: 65,
+    targetAge: p.retireAge,
   };
 }
 

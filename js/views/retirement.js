@@ -1,18 +1,35 @@
-import { el, clear, pageHead, card, stat, field, moneyInput } from "../ui.js";
+import { el, clear, pageHead, card, stat, field, moneyInput, button } from "../ui.js";
 import { load, save } from "../store.js";
 import { usd } from "../format.js";
 import { projectBalance, realValue } from "../lib/finance.js";
 import { lineChart } from "../chart.js";
+import { getProfile, saveProfile } from "../profile.js";
 
 const KEY = "retirement";
-const DEFAULT = {
-  currentAge: 35, retireAge: 65, currentSavings: 60000,
-  monthlyContribution: 800, annualReturn: 7, inflation: 2.5, withdrawalRate: 4,
-};
+function makeDefault() {
+  const p = getProfile();
+  return {
+    currentAge: p.age, retireAge: p.retireAge, currentSavings: 60000,
+    monthlyContribution: 800, annualReturn: 7, inflation: 2.5, withdrawalRate: 4,
+  };
+}
 
 export default function render(root) {
-  const data = load(KEY, DEFAULT);
-  function set(k, v) { data[k] = v; save(KEY, data); draw(); }
+  const data = load(KEY, makeDefault());
+  function set(k, v) {
+    data[k] = v; save(KEY, data);
+    if (k === "currentAge") saveProfile({ age: v });
+    if (k === "retireAge") saveProfile({ retireAge: v });
+    draw();
+  }
+  function useProfile() {
+    const p = getProfile();
+    const nw = load("networth", { assets: [] });
+    const invested = nw.assets.filter((a) => ["Investments", "Retirement"].includes(a.category)).reduce((t, a) => t + (+a.value || 0), 0);
+    data.currentAge = p.age; data.retireAge = p.retireAge;
+    if (invested > 0) data.currentSavings = Math.round(invested);
+    save(KEY, data); draw();
+  }
 
   function draw() {
     clear(root);
@@ -45,7 +62,7 @@ export default function render(root) {
 
   function inputCard(years) {
     return card(
-      el("h2", {}, "Assumptions"),
+      el("div.spread", {}, el("h2", {}, "Assumptions"), button("↻ Use my profile", useProfile, "ghost btn-sm")),
       el("p.card-sub", {}, `${years} years until retirement`),
       el("div.stack", {},
         el("div.form-grid", {},

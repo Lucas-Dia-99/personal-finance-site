@@ -90,3 +90,48 @@ export function barChart(data) {
   });
   return svg;
 }
+
+const PIE_COLORS = ["#2563eb", "#7c3aed", "#16a34a", "#d97706", "#dc2626", "#0891b2", "#db2777", "#65a30d", "#9333ea", "#0d9488", "#ea580c", "#64748b"];
+
+// Donut chart. data: [{ label, value }]. Returns a wrapper with svg + legend.
+export function donutChart(data) {
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "display:flex;gap:20px;align-items:center;flex-wrap:wrap";
+  const total = data.reduce((t, d) => t + Math.max(0, d.value), 0);
+  const size = 200, cx = size / 2, cy = size / 2, rOuter = 92, rInner = 56;
+  const svg = svgEl("svg", { viewBox: `0 0 ${size} ${size}`, width: size, height: size, style: "flex:0 0 auto" });
+
+  if (total <= 0) {
+    svg.appendChild(svgEl("circle", { cx, cy, r: rOuter, fill: "var(--surface-2)" }));
+  } else {
+    let angle = -Math.PI / 2;
+    data.forEach((d, i) => {
+      const frac = Math.max(0, d.value) / total;
+      if (frac <= 0) return;
+      const end = angle + frac * 2 * Math.PI;
+      const large = frac > 0.5 ? 1 : 0;
+      const p = (r, a) => [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+      const [x1, y1] = p(rOuter, angle), [x2, y2] = p(rOuter, end);
+      const [x3, y3] = p(rInner, end), [x4, y4] = p(rInner, angle);
+      const path = svgEl("path", {
+        d: `M${x1} ${y1} A${rOuter} ${rOuter} 0 ${large} 1 ${x2} ${y2} L${x3} ${y3} A${rInner} ${rInner} 0 ${large} 0 ${x4} ${y4} Z`,
+        fill: PIE_COLORS[i % PIE_COLORS.length],
+      });
+      svg.appendChild(path);
+      angle = end;
+    });
+  }
+
+  const legend = document.createElement("div");
+  legend.className = "legend";
+  legend.style.cssText = "flex-direction:column;gap:7px";
+  data.forEach((d, i) => {
+    const pctTxt = total > 0 ? Math.round((d.value / total) * 100) + "%" : "0%";
+    const row = document.createElement("span");
+    row.style.color = "var(--text)";
+    row.innerHTML = `<span style="background:${PIE_COLORS[i % PIE_COLORS.length]}"></span>${d.label} · <span style="color:var(--muted)">${pctTxt}</span>`;
+    legend.appendChild(row);
+  });
+  wrap.append(svg, legend);
+  return wrap;
+}

@@ -1,7 +1,7 @@
-import { el, clear, pageHead, card, stat, field, textInput, moneyInput, select, button, deleteBtn, empty } from "../ui.js";
+import { el, clear, pageHead, card, stat, field, textInput, moneyInput, select, button, deleteBtn, empty, mount } from "../ui.js";
 import { load, save, update, uid } from "../store.js";
 import { usd, usdSigned, formatDate, todayISO } from "../format.js";
-import { lineChart } from "../chart.js";
+import { lineChart, donutChart } from "../chart.js";
 
 const KEY = "networth";
 const DEFAULT = { assets: [], liabilities: [], history: [] };
@@ -25,7 +25,7 @@ export default function render(root) {
     const lastSnap = data.history[data.history.length - 1];
     const change = lastSnap ? net - lastSnap.net : 0;
 
-    root.append(
+    mount(root,
       pageHead("Net Worth", "Track what you own and owe, then snapshot it over time."),
       el("div.grid.grid-3", {},
         card(stat("Total Assets", usd(assets), { tone: "pos" })),
@@ -35,12 +35,21 @@ export default function render(root) {
           tone: net >= 0 ? "pos" : "neg",
         })),
       ),
+      data.assets.length > 0 && allocationCard(),
       historyCard(),
       el("div.grid.grid-2", { style: "margin-top:18px" },
         listCard("Assets", "assets", ASSET_CATS, "pos"),
         listCard("Liabilities", "liabilities", LIAB_CATS, "neg"),
       ),
     );
+  }
+
+  function allocationCard() {
+    const byCat = {};
+    data.assets.forEach((a) => { byCat[a.category] = (byCat[a.category] || 0) + (+a.value || 0); });
+    const slices = Object.entries(byCat).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1])
+      .map(([label, value]) => ({ label: `${label} · ${usd(value)}`, value }));
+    return card(el("h2", {}, "Asset Allocation"), el("p.card-sub", {}, "Where your assets sit."), donutChart(slices));
   }
 
   function historyCard() {

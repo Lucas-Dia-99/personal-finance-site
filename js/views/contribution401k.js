@@ -4,13 +4,27 @@ import { usd, pct } from "../format.js";
 import { paycheckBreakdown } from "../lib/tax.js";
 import { TAX, TAX_YEAR, FILING_OPTIONS, FREQUENCY } from "../data/tax.js";
 import { lineChart } from "../chart.js";
+import { getProfile, saveProfile } from "../profile.js";
+import { button } from "../ui.js";
 
 const KEY = "contrib401k";
-const DEFAULT = { salary: 85000, filing: "single", periods: "26", contribPct: 6, employerMatchPct: 50, matchLimitPct: 6, age: 35, stateRate: 5 };
+function makeDefault() {
+  const p = getProfile();
+  return { salary: p.salary, filing: p.filing, periods: p.periods, contribPct: 6, employerMatchPct: 50, matchLimitPct: 6, age: p.age, stateRate: p.stateRate };
+}
 
 export default function render(root) {
-  const data = load(KEY, DEFAULT);
-  function set(k, v) { data[k] = v; save(KEY, data); draw(); }
+  const data = load(KEY, makeDefault());
+  function set(k, v) {
+    data[k] = v; save(KEY, data);
+    if (["salary", "filing", "periods", "age", "stateRate"].includes(k)) saveProfile({ [k]: v });
+    draw();
+  }
+  function useProfile() {
+    const p = getProfile();
+    Object.assign(data, { salary: p.salary, filing: p.filing, periods: p.periods, age: p.age, stateRate: p.stateRate });
+    save(KEY, data); draw();
+  }
 
   const takeHome = (pct401) => paycheckBreakdown({
     gross: data.salary, filing: data.filing,
@@ -46,7 +60,7 @@ export default function render(root) {
 
   function inputCard() {
     return card(
-      el("h2", {}, "Details"),
+      el("div.spread", {}, el("h2", {}, "Details"), button("↻ Use my profile", useProfile, "ghost btn-sm")),
       el("div.stack", {},
         field("Annual salary", moneyInput(data.salary, (v) => set("salary", v))),
         el("div.form-grid", {},
