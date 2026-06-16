@@ -1,6 +1,7 @@
 import { el, clear, pageHead, card, stat, field, textInput, moneyInput, select, dateInput, button, deleteBtn, progressBar, empty } from "../ui.js";
 import { load, save, uid } from "../store.js";
 import { usd, pct, formatDate, todayISO } from "../format.js";
+import { toMonthly } from "../lib/finance.js";
 
 const KEY = "budget";
 const DEFAULT = { budgets: {}, transactions: [] };
@@ -21,6 +22,25 @@ export default function render(root) {
   const data = load(KEY, DEFAULT);
   let activeMonth = todayISO().slice(0, 7);
   function persist() { save(KEY, data); draw(); }
+
+  // Monthly expense total per category from the Cash Flow tool.
+  function cashFlowByCat() {
+    const cf = load("cashflow", { expenses: [] });
+    const byCat = {};
+    cf.expenses.forEach((e) => { byCat[e.category] = (byCat[e.category] || 0) + toMonthly(+e.amount || 0, e.frequency); });
+    return byCat;
+  }
+  const allCats = () => [...new Set([...CATS, ...Object.keys(cashFlowByCat())])];
+
+  function importFromCashFlow() {
+    const cf = cashFlowByCat();
+    const keys = Object.keys(cf);
+    if (!keys.length) { alert("No Cash Flow expenses to import yet. Add some in the Cash Flow tool first."); return; }
+    const hasExisting = Object.values(data.budgets).some((v) => +v > 0);
+    if (hasExisting && !confirm("Set each category budget to your Cash Flow expense amount? This overwrites existing limits.")) return;
+    keys.forEach((k) => { data.budgets[k] = Math.round(cf[k]); });
+    persist();
+  }
 
   function draw() {
     clear(root);
@@ -53,23 +73,37 @@ export default function render(root) {
   }
 
   function budgetCard(spentByCat) {
-    const c = card(el("h2", {}, "Category Budgets"), el("p.card-sub", {}, "Limits apply every month. Bars fill as you log spending."));
+    const cfByCat = cashFlowByCat();
+    const hasCashFlow = Object.keys(cfByCat).length > 0;
+    const c = card(
+      el("div.spread", {}, el("h2", {}, "Category Budgets"),
+        hasCashFlow && button("⇣ Import from Cash Flow", importFromCashFlow, "ghost btn-sm")),
+      el("p.card-sub", {}, "Limits apply every month. Bars fill as you log spending."),
+    );
     const rows = el("div.stack");
-    const shown = CATS.filter((cat) => data.budgets[cat] > 0 || spentByCat[cat] > 0);
-    if (!shown.length) rows.append(el("p.muted.small", {}, "Set a budget below to begin."));
+    const shown = allCats().filter((cat) => data.budgets[cat] > 0 || spentByCat[cat] > 0 || cfByCat[cat] > 0);
+    if (!shown.length) rows.append(el("p.muted.small", {}, "Set a budget below, or import your Cash Flow expenses."));
     shown.forEach((cat) => {
       const budget = +data.budgets[cat] || 0;
       const spent = spentByCat[cat] || 0;
+      const suggested = Math.round(cfByCat[cat] || 0);
       const frac = budget > 0 ? spent / budget : (spent > 0 ? 1 : 0);
       const over = budget > 0 && spent > budget;
       const bar = over
         ? el("div.progress", {}, el("span", { style: "width:100%;background:var(--negative)" }))
         : progressBar(frac, true);
+      let footer = null;
+      if (budget > 0) {
+        footer = el("div.small.muted", { style: "margin-top:2px" }, over ? `${usd(spent - budget)} over` : `${usd(budget - spent)} left · ${pct(frac * 100, 0)}`);
+      } else if (suggested > 0) {
+        footer = el("div.small", { style: "margin-top:2px" },
+          el("span.muted", {}, `Suggested ${usd(suggested)}/mo from Cash Flow · `),
+          el("a", { href: "#", onClick: (e) => { e.preventDefault(); data.budgets[cat] = suggested; persist(); } }, "apply"));
+      }
       rows.append(el("div", {},
         el("div.spread.small", {}, el("span", { style: "font-weight:600" }, cat),
           el("span", { class: over ? "neg" : "muted" }, `${usd(spent)} / ${usd(budget)}`)),
-        bar,
-        budget > 0 && el("div.small.muted", { style: "margin-top:2px" }, over ? `${usd(spent - budget)} over` : `${usd(budget - spent)} left · ${pct(frac * 100, 0)}`),
+        bar, footer,
       ));
     });
     c.append(rows, el("hr.divider"), budgetEditor());
@@ -82,7 +116,7 @@ export default function render(root) {
     return el("div.stack", {},
       el("p.card-sub", { style: "margin:0" }, "Set or update a category limit"),
       el("div.form-grid", {},
-        field("Category", select(draft.category, CATS.map((c) => [c, c]), (v) => {
+        field("Category", select(draft.category, allCats().map((c) => [c, c]), (v) => {
           draft.category = v;
           const inp = amountInput.querySelector("input");
           inp.value = data.budgets[v] || "";
@@ -116,7 +150,7 @@ export default function render(root) {
     return el("div.stack", {},
       el("div.form-grid", {},
         field("Date", dateInput(draft.date, (v) => (draft.date = v))),
-        field("Category", select(draft.category, CATS.map((c) => [c, c]), (v) => (draft.category = v))),
+        field("Category", select(draft.category, allCats().map((c) => [c, c]), (v) => (draft.category = v))),
       ),
       el("div.form-grid", {},
         field("Amount", moneyInput("", (v) => (draft.amount = v))),
