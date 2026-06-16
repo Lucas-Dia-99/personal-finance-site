@@ -6,23 +6,41 @@ import retirement from "./views/retirement.js";
 import cashflow from "./views/cashflow.js";
 import contrib401k from "./views/contribution401k.js";
 import savings from "./views/savings.js";
+import budget from "./views/budget.js";
+import debt from "./views/debt.js";
+import rothvstrad from "./views/rothvstrad.js";
+import fire from "./views/fire.js";
+import settings from "./views/settings.js";
 
 const ROUTES = [
-  { path: "/dashboard", icon: "🏠", title: "Dashboard", render: dashboard },
-  { path: "/net-worth", icon: "📊", title: "Net Worth", render: netWorth },
-  { path: "/cash-flow", icon: "🔄", title: "Cash Flow", render: cashflow },
-  { path: "/paycheck", icon: "💵", title: "Paycheck", render: paycheck },
-  { path: "/contribution-401k", icon: "🏦", title: "401(k) Impact", render: contrib401k },
-  { path: "/retirement", icon: "🌴", title: "Retirement", render: retirement },
-  { path: "/savings-goals", icon: "🎯", title: "Savings Goals", render: savings },
+  { path: "/dashboard", icon: "🏠", title: "Dashboard", render: dashboard, group: "Overview" },
+  { path: "/net-worth", icon: "📊", title: "Net Worth", render: netWorth, group: "Track" },
+  { path: "/cash-flow", icon: "🔄", title: "Cash Flow", render: cashflow, group: "Track" },
+  { path: "/budget", icon: "📋", title: "Budget", render: budget, group: "Track" },
+  { path: "/savings-goals", icon: "🎯", title: "Savings Goals", render: savings, group: "Plan" },
+  { path: "/debt", icon: "💳", title: "Debt Payoff", render: debt, group: "Plan" },
+  { path: "/retirement", icon: "🌴", title: "Retirement", render: retirement, group: "Plan" },
+  { path: "/fire", icon: "🔥", title: "FIRE", render: fire, group: "Plan" },
+  { path: "/paycheck", icon: "💵", title: "Paycheck", render: paycheck, group: "Paychecks" },
+  { path: "/contribution-401k", icon: "🏦", title: "401(k) Impact", render: contrib401k, group: "Paychecks" },
+  { path: "/roth-vs-traditional", icon: "⚖️", title: "Roth vs Traditional", render: rothvstrad, group: "Paychecks" },
+  { path: "/settings", icon: "💾", title: "Data & Backup", render: settings, group: "Data" },
 ];
 
 const viewEl = document.getElementById("view");
 const navEl = document.getElementById("nav");
 const sidebar = document.getElementById("sidebar");
 
-// Build nav once.
+// Build nav once, with group headers.
+let lastGroup = null;
 for (const r of ROUTES) {
+  if (r.group !== lastGroup) {
+    const h = document.createElement("p");
+    h.className = "nav-group";
+    h.textContent = r.group;
+    navEl.appendChild(h);
+    lastGroup = r.group;
+  }
   const a = document.createElement("a");
   a.href = "#" + r.path;
   a.dataset.path = r.path;

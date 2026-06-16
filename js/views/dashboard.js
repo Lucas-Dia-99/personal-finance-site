@@ -72,9 +72,11 @@ function goalsCard(sv, saved, target, frac, go) {
 function quickCard(go) {
   const links = [
     ["💵", "Paycheck Calculator", "/paycheck"],
-    ["🏦", "401(k) Impact", "/contribution-401k"],
-    ["🌴", "Retirement Projection", "/retirement"],
-    ["📊", "Net Worth Tracker", "/net-worth"],
+    ["💳", "Debt Payoff Planner", "/debt"],
+    ["📋", "Budget vs. Actual", "/budget"],
+    ["🔥", "FIRE Tracker", "/fire"],
+    ["⚖️", "Roth vs Traditional", "/roth-vs-traditional"],
+    ["💾", "Backup & Restore", "/settings"],
   ];
   return card(
     el("h2", {}, "Tools"),
